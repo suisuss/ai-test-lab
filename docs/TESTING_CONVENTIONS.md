@@ -55,15 +55,17 @@ This is experimental and may not work across React versions.
 
 Import from `e2e/helpers.ts`:
 
-| Helper | Purpose |
-|--------|---------|
-| `selectUser(page, username)` | Click a user in the user selector |
-| `selectChannel(page, channelName)` | Click a channel in the channel list |
-| `sendTestMessage(page, content)` | Type and send a message |
-| `waitForMessages(page)` | Wait for message area to be ready |
-| `getAppState(page)` | Get current app state from data layer |
-| `resetDatabase(page)` | Clear all data via test endpoint |
-| `seedDatabase()` | Reseed database with test fixtures |
+| Helper | Purpose | Request-Aware |
+|--------|---------|---------------|
+| `selectUser(page, username)` | Click a user in the user selector | No (client-only state) |
+| `selectChannel(page, channelName)` | Click a channel in the channel list | Yes — waits for `GET /api/channels/{id}/messages` |
+| `sendTestMessage(page, content)` | Type and send a message | Yes — waits for `POST` and subsequent `GET` refetch |
+| `waitForMessages(page)` | Wait for message area DOM to be ready | No (DOM gate, not network) |
+| `waitForNetworkIdle(page, timeout?)` | Wait until all in-flight fetches complete | Yes — uses fetch tracker |
+| `getPendingRequests(page)` | Get list of currently in-flight requests | Yes — uses fetch tracker |
+| `getAppState(page)` | Get current app state from data layer | Direct API call (awaited) |
+| `resetDatabase(page)` | Clear all data via test endpoint | Direct API call (awaited) |
+| `seedDatabase()` | Reseed database with test fixtures | Blocking subprocess |
 
 ## Test Isolation
 
