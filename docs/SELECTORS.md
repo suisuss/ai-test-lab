@@ -16,13 +16,18 @@ Use Playwright's built-in locator methods that map to accessibility semantics:
 | Method | Use for | Example |
 |--------|---------|---------|
 | `getByRole` | Interactive elements | `getByRole('button', { name: 'Send message' })` |
-| `getByLabel` | Form inputs | `getByLabel('Type a message in general')` |
+| `getByLabel` | Form inputs | `getByLabel('Username')`, `getByLabel('Password')` |
 | `getByText` | Visible text content | `getByText('No messages in #empty yet')` |
 | `getByRole('log')` | Message containers | `getByRole('log', { name: /Messages in/ })` |
-| `getByRole('radio')` | User selection | `getByRole('radio', { name: 'Log in as alice' })` |
 | `getByRole('option')` | Channel selection | `getByRole('option').filter({ hasText: 'general' })` |
 | `getByRole('article')` | Individual messages | `getByRole('article', { name: 'Message from alice' })` |
 | `getByRole('status')` | Status messages | `getByRole('status', { name: 'No messages' })` |
+| `getByRole('heading')` | Page/section titles | `getByRole('heading', { name: 'Sign in' })` |
+| `getByRole('link')` | Navigation links | `getByRole('link', { name: 'Register' })` |
+
+### Known ambiguity: `role="alert"`
+
+Next.js injects a hidden route announcer element with `role="alert"` (`#__next-route-announcer__`). This means `getByRole("alert")` will resolve to multiple elements if your page also uses `role="alert"`. Prefer `getByText` for error messages instead.
 
 ## aria Attribute Conventions
 
@@ -31,18 +36,21 @@ Components use aria attributes consistently:
 **Navigation landmarks:**
 - `aria-label="Sidebar"` on the aside element
 - `aria-label="Chat area"` on the main element
-- `aria-label="User selection"` on the user nav
 - `aria-label="Channels"` on the channel nav
 
 **Interactive elements:**
-- Buttons: `aria-label` describes the action ("Send message", "Log in as alice")
-- Radio buttons: `aria-checked` reflects selection state
+- Buttons: `aria-label` describes the action ("Send message", "Sign in")
 - Options: `aria-selected` reflects current channel
 
 **Content regions:**
 - Message list: `role="log"` with `aria-label="Messages in {channelName}"`
 - Empty state: `role="status"` with `aria-label="No messages"`
 - Individual messages: `role="article"` with `aria-label="Message from {username}"`
+
+**Auth pages (login, register):**
+- Form inputs use `<label htmlFor="...">` so `getByLabel` works
+- Error messages use `role="alert"` on a `<p>` element — but use `getByText` to select them (see ambiguity note above)
+- Submit buttons are standard `<button type="submit">`
 
 ## data-testid Convention
 

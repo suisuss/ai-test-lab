@@ -8,9 +8,8 @@ Every test follows Arrange-Act-Assert:
 
 ```typescript
 test("descriptive name of what is being verified", async ({ page }) => {
-  // Arrange: set up preconditions
-  await page.goto("/");
-  await selectUser(page, "alice");
+  // Arrange: log in and set up preconditions
+  await loginAs(page, "alice");
   await selectChannel(page, "general");
   await waitForMessages(page);
 
@@ -53,17 +52,44 @@ This is experimental and may not work across React versions.
 
 ## Helper Functions
 
-Import from `e2e/helpers.ts`:
+Import from `e2e/helpers.ts`. The helpers file is the source of truth — read its JSDoc comments for up-to-date signatures and behavior.
+
+Key helpers:
 
 | Helper | Purpose |
 |--------|---------|
-| `selectUser(page, username)` | Click a user in the user selector |
+| `loginAs(page, username, password?)` | Log in via the login page (password defaults to "password123") |
 | `selectChannel(page, channelName)` | Click a channel in the channel list |
 | `sendTestMessage(page, content)` | Type and send a message |
 | `waitForMessages(page)` | Wait for message area to be ready |
 | `getAppState(page)` | Get current app state from data layer |
 | `resetDatabase(page)` | Clear all data via test endpoint |
 | `seedDatabase()` | Reseed database with test fixtures |
+
+## Authentication in Tests
+
+The app requires authentication. Every test that interacts with the main page must call `loginAs` first.
+
+```typescript
+// Log in as a seed user (all use password "password123")
+await loginAs(page, "alice");
+```
+
+**Session persistence:** Tests run sequentially in a shared browser context. A session cookie set by `loginAs` persists across navigations and reloads within the same test. You do not need to re-login after `page.reload()`.
+
+**Testing unauthenticated flows:** The shared browser context means session cookies from earlier tests may leak into later ones. To test behavior for unauthenticated users, create a fresh browser context:
+
+```typescript
+test("unauthenticated user is redirected", async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto("/");
+  // ... assertions about redirect ...
+  await context.close();
+});
+```
+
+Note: this test destructures `{ browser }` instead of `{ page }`.
 
 ## Test Isolation
 
@@ -76,10 +102,40 @@ test.beforeEach(async ({ page }) => {
 });
 ```
 
+The `resetDatabase` and `seedDatabase` endpoints are excluded from authentication (the proxy does not protect `/api/test-utils/*`), so they work regardless of session state.
+
+## Component Conventions
+
+Every component's root element must have an `aria-label` that identifies the component's purpose. This makes components directly addressable in tests via `getByLabel` without relying on DOM structure.
+
+```tsx
+// Good
+export function ChannelList({ ... }) {
+  return <nav aria-label="Channels">...</nav>;
+}
+
+// Good
+export function MessageInput({ channelName, ... }) {
+  return <form aria-label={`Message input for ${channelName}`}>...</form>;
+}
+
+// Bad — no aria-label on root element
+export function ChannelList({ ... }) {
+  return <nav>...</nav>;
+}
+```
+
+This convention enables stable test selectors:
+
+```typescript
+await expect(page.getByLabel("Channels")).toBeVisible();
+await expect(page.getByLabel("Message input for general")).toBeVisible();
+```
+
 ## Naming Conventions
 
 - Test files: `e2e/{feature}.spec.ts`
-- Describe blocks: feature area ("Send a message", "Channel navigation")
+- Describe blocks: feature area ("Send a message", "Login page")
 - Test names: specific behavior being verified
 
 ## What NOT to Do
@@ -89,12 +145,14 @@ test.beforeEach(async ({ page }) => {
 - Never assume channel/user ordering without explicitly selecting
 - Never skip the Arrange step — always set up known state
 - Never use `page.waitForTimeout()` — use semantic waiters instead
+- Never use bare `getByRole("alert")` — Next.js injects a route announcer with `role="alert"`, so this resolves to multiple elements. Use `getByText` for error messages or narrow with `.filter()`
 
 ## Seed Data Reference
 
 The seed script creates:
 
 **Users:** alice, bob, charlie (IDs: user-alice, user-bob, user-charlie)
+- All users have password: `password123`
 
 **Channels:** empty, general, random (sorted alphabetically)
 - empty: 0 members, 0 messages

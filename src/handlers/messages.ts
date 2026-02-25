@@ -1,14 +1,13 @@
 type SendMessageParams = {
   content: string;
-  senderId: string;
   channelId: string;
 };
 
-export async function sendMessage({ content, senderId, channelId }: SendMessageParams) {
+export async function sendMessage({ content, channelId }: SendMessageParams) {
   const response = await fetch(`/api/channels/${channelId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, senderId }),
+    body: JSON.stringify({ content }),
   });
 
   if (!response.ok) {
@@ -21,11 +20,6 @@ export async function sendMessage({ content, senderId, channelId }: SendMessageP
 
 export async function fetchMessages(channelId: string) {
   const response = await fetch(`/api/channels/${channelId}/messages`);
-  return response.json();
-}
-
-export async function fetchUsers() {
-  const response = await fetch("/api/users");
   return response.json();
 }
 
