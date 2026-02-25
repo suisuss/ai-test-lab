@@ -69,3 +69,46 @@ type ComponentNode = {
 ```
 
 **Status:** Working with React 19 + Next.js 16 App Router. The serializer handles the deep provider chain (~30 unnamed context wrappers) by flattening through unnamed fibers without counting them toward the depth limit. Application components (Home, MessageList, ChannelList, UserSelector) are correctly resolved with their props and aria attributes.
+
+## Fetch Tracker
+
+In development mode, the app intercepts `window.fetch` to track all in-flight requests. This is installed by `DevInspector` alongside the component tree inspector.
+
+### window.__TEST_PENDING_REQUESTS__()
+
+Returns an array of currently in-flight requests:
+
+```typescript
+type PendingRequest = {
+  method: string;     // "GET", "POST", etc.
+  url: string;        // Request URL
+  startedAt: number;  // Date.now() when request started
+};
+```
+
+**Usage in tests:**
+```typescript
+const pending = await getPendingRequests(page);
+console.log(pending); // [{ method: "GET", url: "/api/channels/abc/messages", startedAt: 1708... }]
+```
+
+### window.__TEST_NETWORK_IDLE__()
+
+Returns `true` when no fetch requests are in-flight, `false` otherwise.
+
+**Usage in tests:**
+```typescript
+await waitForNetworkIdle(page);
+// All fetches complete — safe to assert
+```
+
+### AI Agent Usage
+
+These globals enable AI agents to reason about application readiness without hardcoding endpoint patterns. An agent can:
+
+1. Perform an action (click, fill, submit)
+2. Call `getPendingRequests(page)` to see what requests were triggered
+3. Call `waitForNetworkIdle(page)` to wait for completion
+4. Then assert on DOM or state
+
+This is complementary to the request-aware helpers (`selectChannel`, `sendTestMessage`) which wait for specific known responses. The fetch tracker provides a general-purpose "is the app settled?" signal for cases where the agent doesn't know which endpoints are involved.

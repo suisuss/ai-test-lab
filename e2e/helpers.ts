@@ -119,21 +119,48 @@ export async function selectUser(page: Page, username: string) {
 
 /**
  * Select a channel by clicking it in the channel list.
+ * Waits for the messages GET response before returning.
  */
 export async function selectChannel(page: Page, channelName: string) {
+  const messagesLoaded = page.waitForResponse(
+    (resp) =>
+      resp.url().includes("/api/channels/") &&
+      resp.url().endsWith("/messages") &&
+      resp.request().method() === "GET" &&
+      resp.status() === 200
+  );
+
   await page
     .getByRole("option")
     .filter({ hasText: channelName })
     .click();
+
+  await messagesLoaded;
 }
 
 /**
  * Send a message in the currently selected channel.
+ * Waits for the POST response and the subsequent messages GET refetch.
  */
 export async function sendTestMessage(page: Page, content: string) {
-  const input = page.getByLabel(/Type a message/);
-  await input.fill(content);
+  const postDone = page.waitForResponse(
+    (resp) =>
+      resp.url().includes("/api/channels/") &&
+      resp.url().endsWith("/messages") &&
+      resp.request().method() === "POST"
+  );
+  const getDone = page.waitForResponse(
+    (resp) =>
+      resp.url().includes("/api/channels/") &&
+      resp.url().endsWith("/messages") &&
+      resp.request().method() === "GET"
+  );
+
+  await page.getByLabel(/Type a message/).fill(content);
   await page.getByRole("button", { name: "Send message" }).click();
+
+  await postDone;
+  await getDone;
 }
 
 /**
@@ -152,4 +179,34 @@ export async function waitForMessages(page: Page) {
  */
 export async function waitForMessageLog(page: Page) {
   await page.getByRole("log").waitFor({ state: "visible", timeout: 10000 });
+}
+
+/**
+ * Pending request descriptor from the fetch tracker.
+ */
+type PendingRequest = {
+  method: string;
+  url: string;
+  startedAt: number;
+};
+
+/**
+ * Get the list of currently in-flight fetch requests.
+ * Requires the fetch tracker to be installed (dev mode only).
+ */
+export async function getPendingRequests(page: Page): Promise<PendingRequest[]> {
+  return page.evaluate(
+    () => (window as any).__TEST_PENDING_REQUESTS__?.() ?? []
+  );
+}
+
+/**
+ * Wait until all in-flight fetch requests have completed.
+ * Requires the fetch tracker to be installed (dev mode only).
+ */
+export async function waitForNetworkIdle(page: Page, timeout = 5000) {
+  await page.waitForFunction(
+    () => (window as any).__TEST_NETWORK_IDLE__?.() === true,
+    { timeout }
+  );
 }
