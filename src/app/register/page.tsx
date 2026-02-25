@@ -44,7 +44,7 @@ export default function RegisterPage() {
     if (result?.error) {
       setError("Account created but login failed. Try signing in.")
     } else {
-      router.push("/")
+      router.push("/chat")
       router.refresh()
     }
   }
@@ -130,7 +130,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-zinc-500">
           Already have an account?{" "}
-          <Link href="/login" className="text-zinc-900 underline">
+          <Link href="/" className="text-zinc-900 underline">
             Sign in
           </Link>
         </p>

@@ -166,11 +166,11 @@ test.describe("Component tree inspection", () => {
     expect(tree).not.toBeNull();
 
     // Assert: application components are present
-    const home = findComponent(tree, "Home");
+    const chatPage = findComponent(tree, "ChatPage");
     const messageList = findComponent(tree, "MessageList");
     const channelList = findComponent(tree, "ChannelList");
 
-    expect(home).not.toBeNull();
+    expect(chatPage).not.toBeNull();
     expect(messageList).not.toBeNull();
     expect(channelList).not.toBeNull();
 

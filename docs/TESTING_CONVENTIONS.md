@@ -104,6 +104,34 @@ test.beforeEach(async ({ page }) => {
 
 The `resetDatabase` and `seedDatabase` endpoints are excluded from authentication (the proxy does not protect `/api/test-utils/*`), so they work regardless of session state.
 
+## Component Conventions
+
+Every component's root element must have an `aria-label` that identifies the component's purpose. This makes components directly addressable in tests via `getByLabel` without relying on DOM structure.
+
+```tsx
+// Good
+export function ChannelList({ ... }) {
+  return <nav aria-label="Channels">...</nav>;
+}
+
+// Good
+export function MessageInput({ channelName, ... }) {
+  return <form aria-label={`Message input for ${channelName}`}>...</form>;
+}
+
+// Bad — no aria-label on root element
+export function ChannelList({ ... }) {
+  return <nav>...</nav>;
+}
+```
+
+This convention enables stable test selectors:
+
+```typescript
+await expect(page.getByLabel("Channels")).toBeVisible();
+await expect(page.getByLabel("Message input for general")).toBeVisible();
+```
+
 ## Naming Conventions
 
 - Test files: `e2e/{feature}.spec.ts`

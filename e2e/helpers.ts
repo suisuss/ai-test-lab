@@ -111,18 +111,18 @@ export function findAllComponents(
 
 /**
  * Log in as a user via the login page.
- * Navigates to /login, fills credentials, submits, and waits for redirect.
+ * Navigates to /, fills credentials, submits, and waits for redirect to /chat.
  */
 export async function loginAs(
   page: Page,
   username: string,
   password = "password123"
 ) {
-  await page.goto("/login");
+  await page.goto("/");
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL("/");
+  await page.waitForURL("/chat");
 }
 
 /**

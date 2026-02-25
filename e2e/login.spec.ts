@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 test.describe("Login page", () => {
   test("renders login form with all expected elements", async ({ page }) => {
     // Arrange & Act: navigate to login page
-    await page.goto("/login");
+    await page.goto("/");
 
     // Assert (DOM): page heading
     await expect(
@@ -33,19 +33,19 @@ test.describe("Login page", () => {
     ).toBeVisible();
   });
 
-  test("successful login redirects to the main page", async ({ page }) => {
+  test("successful login redirects to the chat page", async ({ page }) => {
     // Arrange: navigate to login page
-    await page.goto("/login");
+    await page.goto("/");
 
     // Act: fill in valid credentials and submit
     await page.getByLabel("Username").fill("alice");
     await page.getByLabel("Password").fill("password123");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    // Assert: redirected to main page
-    await page.waitForURL("/");
+    // Assert: redirected to chat page
+    await page.waitForURL("/chat");
 
-    // Assert (DOM): main page elements are visible
+    // Assert (DOM): chat page elements are visible
     await expect(
       page.getByRole("heading", { name: "ai-test-lab" })
     ).toBeVisible();
@@ -60,7 +60,7 @@ test.describe("Login page", () => {
 
   test("invalid credentials show an error message", async ({ page }) => {
     // Arrange: navigate to login page
-    await page.goto("/login");
+    await page.goto("/");
 
     // Act: fill in wrong password and submit
     await page.getByLabel("Username").fill("alice");
@@ -73,12 +73,12 @@ test.describe("Login page", () => {
     ).toBeVisible();
 
     // Assert: still on login page (no redirect)
-    expect(page.url()).toContain("/login");
+    expect(page.url()).not.toContain("/chat");
   });
 
   test("nonexistent username shows an error message", async ({ page }) => {
     // Arrange: navigate to login page
-    await page.goto("/login");
+    await page.goto("/");
 
     // Act: fill in a username that doesn't exist
     await page.getByLabel("Username").fill("nobody");
@@ -91,18 +91,18 @@ test.describe("Login page", () => {
     ).toBeVisible();
   });
 
-  test("unauthenticated user visiting / is redirected to login", async ({
+  test("unauthenticated user visiting /chat is redirected to login", async ({
     browser,
   }) => {
     // Arrange: create a fresh browser context with no cookies/session
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Act: navigate directly to the main page without logging in
-    await page.goto("/");
+    // Act: navigate directly to the chat page without logging in
+    await page.goto("/chat");
 
     // Assert: redirected to login page
-    await page.waitForURL(/login/, { timeout: 10000 });
+    await page.waitForURL("/", { timeout: 10000 });
     await expect(page.getByLabel("Username")).toBeVisible();
 
     await context.close();
@@ -112,7 +112,7 @@ test.describe("Login page", () => {
     page,
   }) => {
     // Arrange: navigate to login page
-    await page.goto("/login");
+    await page.goto("/");
 
     // Act: click the register link
     await page.getByRole("link", { name: "Register" }).click();
