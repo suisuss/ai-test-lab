@@ -43,6 +43,9 @@ prisma/*.db-journal
 /playwright-report/
 /blob-report/
 
+# worktrees
+/.worktrees/
+
 # vercel
 .vercel
 
