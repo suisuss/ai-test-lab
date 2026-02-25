@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String          @id @default(cuid())
+  username  String          @unique
+  createdAt DateTime        @default(now())
+  messages  Message[]       @relation("sender")
+  channels  ChannelMember[]
+}
+
+model Channel {
+  id        String          @id @default(cuid())
+  name      String
+  createdAt DateTime        @default(now())
+  messages  Message[]
+  members   ChannelMember[]
+}
+
+model ChannelMember {
+  id        String   @id @default(cuid())
+  userId    String
+  channelId String
+  joinedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  channel   Channel  @relation(fields: [channelId], references: [id])
+
+  @@unique([userId, channelId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  senderId  String
+  channelId String
+  createdAt DateTime @default(now())
+  sender    User     @relation("sender", fields: [senderId], references: [id])
+  channel   Channel  @relation(fields: [channelId], references: [id])
+}

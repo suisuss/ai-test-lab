@@ -1,0 +1,28 @@
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./e2e:/app/e2e
+      - ./public:/app/public
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - NODE_ENV=development
+    profiles:
+      - dev
+
+  test:
+    build:
+      context: .
+      target: test
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - NODE_ENV=development
+      - CI=true
+    profiles:
+      - test
