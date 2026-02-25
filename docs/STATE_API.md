@@ -68,4 +68,8 @@ type ComponentNode = {
 };
 ```
 
-**Status:** Working with React 19 + Next.js 16 App Router. The serializer handles the deep provider chain (~30 unnamed context wrappers) by flattening through unnamed fibers without counting them toward the depth limit. Application components (Home, MessageList, ChannelList, UserSelector) are correctly resolved with their props and aria attributes.
+**Status:** Working with React 19 + Next.js 16 App Router. The serializer handles the deep provider chain (~30 unnamed context wrappers) by flattening through unnamed fibers without counting them toward the depth limit. Application components (Home, MessageList, ChannelList) are correctly resolved with their props and aria attributes.
+
+## Authentication and Test Endpoints
+
+The test utility endpoints (`/api/test-utils/*`) are excluded from route protection — the proxy matcher does not cover them. This means `resetDatabase` and `getAppState` work regardless of whether the browser has a valid session. The only guard is `NODE_ENV === "production"`, which returns 404.
