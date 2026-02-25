@@ -5,7 +5,7 @@ import {
   seedDatabase,
   getComponentTree,
   findComponent,
-  selectUser,
+  loginAs,
   selectChannel,
   sendTestMessage,
   waitForMessages,
@@ -27,7 +27,7 @@ import {
  *   - Structure assertions: verify component tree via getComponentTree() (experimental)
  *
  * Convention 3: Test structure
- *   - Arrange: set up preconditions (seed DB, select user/channel)
+ *   - Arrange: set up preconditions (seed DB, login, select channel)
  *   - Act: perform the user action
  *   - Assert: verify outcomes at multiple layers
  *
@@ -45,9 +45,8 @@ test.describe("Send a message", () => {
   test("user can send a message and see it appear in the channel", async ({
     page,
   }) => {
-    // Arrange: navigate, select user, select general channel
-    await page.goto("/");
-    await selectUser(page, "alice");
+    // Arrange: login as alice, select general channel
+    await loginAs(page, "alice");
     await selectChannel(page, "general");
     await waitForMessages(page);
 
@@ -74,15 +73,14 @@ test.describe("Send a message", () => {
 
 test.describe("Switch channels", () => {
   test("switching channels updates the message list", async ({ page }) => {
-    // Arrange: navigate, select general channel
-    await page.goto("/");
+    // Arrange: login, select general channel
+    await loginAs(page, "alice");
     await selectChannel(page, "general");
-    await waitForMessages(page);
 
-    // Verify general channel messages are showing
+    // Verify general channel messages are showing (with auto-retry)
     await expect(
       page.getByText("Hey everyone, welcome to the general channel!")
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 10000 });
 
     // Act: switch to random channel
     await selectChannel(page, "random");
@@ -109,9 +107,8 @@ test.describe("Switch channels", () => {
 
 test.describe("Message persistence", () => {
   test("sent message persists after page reload", async ({ page }) => {
-    // Arrange: select channel, send a message
-    await page.goto("/");
-    await selectUser(page, "bob");
+    // Arrange: login, select channel, send a message
+    await loginAs(page, "bob");
     await selectChannel(page, "general");
     await waitForMessages(page);
     await sendTestMessage(page, "This should persist");
@@ -133,8 +130,8 @@ test.describe("Message persistence", () => {
 
 test.describe("Empty channel", () => {
   test("empty channel shows appropriate empty state", async ({ page }) => {
-    // Arrange
-    await page.goto("/");
+    // Arrange: login
+    await loginAs(page, "alice");
 
     // Act: navigate to the empty channel
     await selectChannel(page, "empty");
@@ -158,9 +155,8 @@ test.describe("Component tree inspection", () => {
   test("can find application components in the React fiber tree", async ({
     page,
   }) => {
-    // Arrange
-    await page.goto("/");
-    await selectChannel(page, "general");
+    // Arrange: login and wait for channels to load
+    await loginAs(page, "alice");
     await waitForMessages(page);
 
     // Act: get the component tree
@@ -173,18 +169,12 @@ test.describe("Component tree inspection", () => {
     const home = findComponent(tree, "Home");
     const messageList = findComponent(tree, "MessageList");
     const channelList = findComponent(tree, "ChannelList");
-    const userSelector = findComponent(tree, "UserSelector");
 
     expect(home).not.toBeNull();
     expect(messageList).not.toBeNull();
     expect(channelList).not.toBeNull();
-    expect(userSelector).not.toBeNull();
 
-    // Assert: UserSelector has the expected props
-    expect(userSelector!.props).toHaveProperty("users");
-    expect(userSelector!.props).toHaveProperty("currentUserId");
-
-    // Assert: MessageList has channel name prop
-    expect(messageList!.props).toHaveProperty("channelName", "general");
+    // Assert: MessageList has a channel name prop (first channel auto-selected)
+    expect(messageList!.props).toHaveProperty("channelName");
   });
 });

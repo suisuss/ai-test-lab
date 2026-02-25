@@ -1,4 +1,5 @@
 import path from "path";
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const dbPath = path.join(process.cwd(), "prisma", "dev.db");
@@ -12,16 +13,18 @@ async function seed() {
   await prisma.channel.deleteMany();
   await prisma.user.deleteMany();
 
+  const passwordHash = await bcrypt.hash("password123", 10);
+
   const alice = await prisma.user.create({
-    data: { id: "user-alice", username: "alice" },
+    data: { id: "user-alice", username: "alice", passwordHash },
   });
 
   const bob = await prisma.user.create({
-    data: { id: "user-bob", username: "bob" },
+    data: { id: "user-bob", username: "bob", passwordHash },
   });
 
   const charlie = await prisma.user.create({
-    data: { id: "user-charlie", username: "charlie" },
+    data: { id: "user-charlie", username: "charlie", passwordHash },
   });
 
   const general = await prisma.channel.create({

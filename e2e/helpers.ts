@@ -110,11 +110,19 @@ export function findAllComponents(
 }
 
 /**
- * Select a user by clicking their button in the user selector.
- * Uses a11y selectors as primary strategy.
+ * Log in as a user via the login page.
+ * Navigates to /login, fills credentials, submits, and waits for redirect.
  */
-export async function selectUser(page: Page, username: string) {
-  await page.getByRole("radio", { name: `Log in as ${username}` }).click();
+export async function loginAs(
+  page: Page,
+  username: string,
+  password = "password123"
+) {
+  await page.goto("/login");
+  await page.getByLabel("Username").fill(username);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL("/");
 }
 
 /**

@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { UserSelector } from "@/ui/components/user-selector";
+import { useSession, signOut } from "next-auth/react";
 import { ChannelList } from "@/ui/components/channel-list";
 import { MessageList } from "@/ui/components/message-list";
 import { MessageInput } from "@/ui/components/message-input";
 import {
-  fetchUsers,
   fetchChannels,
   fetchMessages as fetchChannelMessages,
   sendMessage,
 } from "@/handlers/messages";
 
-type User = { id: string; username: string };
 type Channel = {
   id: string;
   name: string;
@@ -26,16 +24,14 @@ type Message = {
 };
 
 export default function Home() {
-  const [users, setUsers] = useState<User[]>([]);
+  const { data: session } = useSession();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentChannelId, setCurrentChannelId] = useState<string | null>(null);
 
   const currentChannel = channels.find((c) => c.id === currentChannelId);
 
   useEffect(() => {
-    fetchUsers().then(setUsers);
     fetchChannels().then((channels) => {
       setChannels(channels);
       if (channels.length > 0) {
@@ -53,24 +49,19 @@ export default function Home() {
     loadMessages();
   }, [loadMessages]);
 
-  function handleUserSelect(userId: string) {
-    setCurrentUserId(userId);
-  }
-
   function handleChannelSelect(channelId: string) {
     setCurrentChannelId(channelId);
     setMessages([]);
   }
 
   async function handleSendMessage(formData: FormData) {
-    if (!currentUserId || !currentChannelId) return;
+    if (!currentChannelId) return;
 
     const content = formData.get("content") as string;
     if (!content?.trim()) return;
 
     await sendMessage({
       content: content.trim(),
-      senderId: currentUserId,
       channelId: currentChannelId,
     });
 
@@ -86,12 +77,18 @@ export default function Home() {
         <div className="p-4 border-b border-zinc-200">
           <h1 className="text-lg font-semibold text-zinc-900">ai-test-lab</h1>
         </div>
-        <div className="p-3">
-          <UserSelector
-            users={users}
-            currentUserId={currentUserId}
-            onSelect={handleUserSelect}
-          />
+        <div className="p-3 border-b border-zinc-200">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-zinc-700">
+              {session?.user?.name}
+            </span>
+            <button
+              onClick={() => signOut()}
+              className="text-xs text-zinc-500 hover:text-zinc-700"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
         <div className="flex-1 p-3">
           <ChannelList
@@ -118,19 +115,10 @@ export default function Home() {
               messages={messages}
               channelName={currentChannel.name}
             />
-            {currentUserId ? (
-              <MessageInput
-                channelName={currentChannel.name}
-                onSend={handleSendMessage}
-              />
-            ) : (
-              <div
-                role="status"
-                className="border-t border-zinc-200 p-4 text-sm text-zinc-400 text-center"
-              >
-                Select a user above to start messaging
-              </div>
-            )}
+            <MessageInput
+              channelName={currentChannel.name}
+              onSend={handleSendMessage}
+            />
           </>
         ) : (
           <div
