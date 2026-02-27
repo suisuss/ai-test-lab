@@ -1,9 +1,6 @@
 "use client";
 
-type User = {
-  id: string;
-  username: string;
-};
+import type { User } from "@/types";
 
 type UserSelectorProps = {
   users: User[];

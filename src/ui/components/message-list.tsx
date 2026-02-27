@@ -1,9 +1,4 @@
-type Message = {
-  id: string;
-  content: string;
-  createdAt: Date;
-  sender: { id: string; username: string };
-};
+import type { Message } from "@/types";
 
 type MessageListProps = {
   messages: Message[];

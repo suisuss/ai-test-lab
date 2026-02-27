@@ -58,3 +58,44 @@ The strict separation enables AI-assisted test development:
 2. **Handlers are testable units** — they coordinate operations with clear inputs/outputs. Tests can mock the data layer and verify handler behavior.
 3. **Data layer is independently verifiable** — repository functions can be tested with a real database. The test state endpoint (`/api/test-utils/state`) exposes data layer state directly.
 4. **Layer boundaries are grep-able** — an AI agent can verify architecture compliance by checking import paths.
+
+## Provider System
+
+Each layer is implemented as a React Context provider. Providers are nested in dependency order so each layer can consume layers above it.
+
+### Composition Order
+
+```
+<SystemProvider>        config, error handling, activity logging
+  <DataProvider>        users, channels, messages state + fetch/mutation controllers
+    <HandlerProvider>   event handlers that orchestrate data operations
+      <UIProvider>      app-level UI state (app name, future: theme/layout)
+        {children}
+      </UIProvider>
+    </HandlerProvider>
+  </DataProvider>
+</SystemProvider>
+```
+
+This nesting is defined in `src/app/providers.tsx` and mounted in `src/app/layout.tsx`.
+
+### Hooks
+
+| Hook | Provider | Returns |
+|------|----------|---------|
+| `useSystem()` | SystemProvider | `config`, `error`, `activity` |
+| `useData()` | DataProvider | `users`, `channels`, `messages`, selection state, `controllers` |
+| `useHandlers()` | HandlerProvider | `handleUserSelect`, `handleChannelSelect`, `handleSendMessage` |
+| `useUI()` | UIProvider | `appName` |
+
+### Data Flow
+
+1. **UI components** remain pure — they receive data and callbacks via props from the page
+2. **Page** (`src/app/page.tsx`) calls `useData()` and `useHandlers()` to get values and passes them as props
+3. **HandlerProvider** consumes `useData()` to orchestrate: validate input, call data controllers, handle errors
+4. **DataProvider** manages all client state and calls fetch functions from `src/handlers/messages.ts`
+5. **SystemProvider** provides error handling and activity logging consumed by DataProvider
+
+### Shared Types
+
+Domain types (`User`, `Channel`, `Message`) are defined once in `src/types.ts` and imported by all layers.

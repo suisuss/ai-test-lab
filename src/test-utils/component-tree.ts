@@ -71,7 +71,7 @@ function collectFiberChildren(fiber: any, depth: number): SerializedNode[] {
 }
 
 function walkFiber(fiber: any, depth = 0): SerializedNode[] {
-  if (!fiber || depth > 50) return [];
+  if (!fiber || depth > 80) return [];
 
   const isComponent =
     typeof fiber.type === "function" || typeof fiber.type === "object";

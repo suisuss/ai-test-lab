@@ -1,8 +1,4 @@
-type Channel = {
-  id: string;
-  name: string;
-  _count: { members: number; messages: number };
-};
+import type { Channel } from "@/types";
 
 type ChannelListProps = {
   channels: Channel[];
